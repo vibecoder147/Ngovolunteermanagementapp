@@ -1,0 +1,197 @@
+import { useState } from 'react';
+import { FileSignature, Plus, CheckCircle, Clock, XCircle, Calendar, Send } from 'lucide-react';
+import { Modal, Badge, Card, SectionHeader, FormField, Select } from '../shared/UIComponents';
+
+interface JLRequest {
+  id: number;
+  tenure: string;
+  tenureType: string;
+  requestDate: string;
+  status: 'pending' | 'approved' | 'rejected';
+  generatedBy?: string;
+}
+
+const initialRequests: JLRequest[] = [
+  {
+    id: 1,
+    tenure: 'January 2025',
+    tenureType: 'monthly',
+    requestDate: '2025-03-01',
+    status: 'approved',
+    generatedBy: 'Priya Sharma (Admin)',
+  },
+];
+
+const generateMonthOptions = () => {
+  const months: { label: string; value: string }[] = [];
+  const base = new Date(2025, 0, 1);
+  for (let i = 0; i < 24; i++) {
+    const d = new Date(base.getFullYear(), base.getMonth() + i, 1);
+    const label = d.toLocaleString('en-IN', { month: 'long', year: 'numeric' });
+    months.push({ label, value: label });
+  }
+  return months;
+};
+
+const monthOptions = generateMonthOptions();
+
+export default function VolunteerJoiningLetterTab() {
+  const [requests, setRequests] = useState<JLRequest[]>(initialRequests);
+  const [showForm, setShowForm] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(monthOptions[0].value);
+
+  const handleSubmit = () => {
+    if (!selectedMonth) return;
+    const newReq: JLRequest = {
+      id: Date.now(),
+      tenure: selectedMonth,
+      tenureType: 'monthly',
+      requestDate: new Date().toISOString().split('T')[0],
+      status: 'pending',
+    };
+    setRequests(prev => [...prev, newReq]);
+    setSelectedMonth(monthOptions[0].value);
+    setShowForm(false);
+  };
+
+  return (
+    <div>
+      <SectionHeader
+        title="Joining Letter"
+        subtitle="Request your monthly joining/tenure letter"
+        actions={
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-medium transition-colors shadow-md shadow-orange-500/20"
+          >
+            <Plus className="w-4 h-4" /> Request Letter
+          </button>
+        }
+      />
+
+      {/* Info Banner */}
+      <div className="mb-5 p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl">
+        <div className="flex items-start gap-3">
+          <FileSignature className="w-5 h-5 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-orange-800 dark:text-orange-300">Volunteer Tenure Letter</p>
+            <p className="text-xs text-orange-600 dark:text-orange-400 mt-1 leading-relaxed">
+              Volunteers can request a monthly joining/tenure letter. Select the month for which you need the letter.
+              Your assigned Admin will review and generate the letter.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Requests List */}
+      <div className="space-y-3">
+        {requests.map(req => (
+          <Card key={req.id} className="p-4">
+            <div className="flex items-start gap-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                req.status === 'approved' ? 'bg-emerald-100 dark:bg-emerald-900/30' :
+                req.status === 'rejected' ? 'bg-red-100 dark:bg-red-900/30' :
+                'bg-orange-100 dark:bg-orange-900/30'
+              }`}>
+                {req.status === 'approved'
+                  ? <CheckCircle className="w-5 h-5 text-emerald-500" />
+                  : req.status === 'rejected'
+                    ? <XCircle className="w-5 h-5 text-red-500" />
+                    : <Clock className="w-5 h-5 text-orange-500" />
+                }
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-medium text-slate-800 dark:text-slate-200">
+                      Joining Letter – {req.tenure}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400">
+                        Monthly
+                      </span>
+                      <span className="flex items-center gap-1 text-xs text-slate-400">
+                        <Calendar className="w-3 h-3" />
+                        Requested {req.requestDate}
+                      </span>
+                    </div>
+                  </div>
+                  <Badge status={req.status} />
+                </div>
+
+                {req.status === 'approved' && req.generatedBy && (
+                  <div className="mt-2 space-y-1.5">
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                      ✓ Generated by {req.generatedBy}
+                    </p>
+                    <button className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 rounded-lg hover:bg-emerald-100 transition-colors">
+                      <FileSignature className="w-3 h-3" /> Download Letter
+                    </button>
+                  </div>
+                )}
+                {req.status === 'pending' && (
+                  <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-600 dark:text-amber-400">
+                    <Clock className="w-3 h-3" />
+                    Awaiting admin review
+                  </div>
+                )}
+                {req.status === 'rejected' && (
+                  <p className="text-xs text-red-500 mt-2">Request rejected. Please contact your assigned admin.</p>
+                )}
+              </div>
+            </div>
+          </Card>
+        ))}
+        {requests.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-16">
+            <FileSignature className="w-12 h-12 text-slate-300 dark:text-slate-600 mb-3" />
+            <p className="text-slate-500 dark:text-slate-400">No joining letter requests yet</p>
+            <button onClick={() => setShowForm(true)} className="mt-3 text-sm text-orange-500 hover:underline">
+              Request your first letter
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Request Form Modal */}
+      {showForm && (
+        <Modal title="Request Joining Letter" onClose={() => setShowForm(false)}>
+          <div className="space-y-4">
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-xs text-blue-700 dark:text-blue-300">
+              <Send className="w-3.5 h-3.5 inline mr-1.5" />
+              For volunteers, joining letters are issued on a <strong>monthly</strong> basis. Select the month for which you need the letter.
+            </div>
+
+            <FormField label="Select Month *">
+              <Select
+                value={selectedMonth}
+                onChange={setSelectedMonth}
+                options={monthOptions}
+              />
+            </FormField>
+
+            <div className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Tenure Preview</p>
+              <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{selectedMonth} (Monthly)</p>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleSubmit}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors"
+              >
+                <FileSignature className="w-4 h-4" /> Submit Request
+              </button>
+              <button
+                onClick={() => setShowForm(false)}
+                className="flex-1 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
